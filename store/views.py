@@ -1,6 +1,10 @@
 from django.shortcuts import render,get_object_or_404,redirect
 from django.http import HttpResponse
 from store.models import Category,Product,Cart,CartItem
+from store.forms import signUpForm
+from django.contrib.auth.models import Group,User
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import login,authenticate,logout
 
 # Create your views here.
 def index(request,category_slug=None):
@@ -70,4 +74,48 @@ def cartdetail(request):
         pass
     return render(request,'cartdetail.html',dict(cart_items = cart_items,total = total,counter = counter))
 
+def removeCart(request,product_id):
+    cart = Cart.objects.get(cart_id = _cart_id(request))
+    product = get_object_or_404(Product,id = product_id)
+    cartItem =  CartItem.objects.get(product = product, cart = cart)
+    cartItem.delete()
+    return redirect('cartdetail')
 
+def signupView(request):
+    if request.method == 'POST':
+        # บันทึกข้อมูลuser
+        form = signUpForm(request.POST)
+        if form.is_valid():
+            form.save()
+        # บันทึก group Customer
+        # ดึง username มาใช้
+            username = form.cleaned_data.get('username')
+            # ดีงข้อมูลจากฐาาข้อมูล
+            signUpUser = User.objects.get(username = username)
+            # จัด group
+            customer_group = Group.objects.get(name = 'Customer')
+            customer_group.user_set.add(signUpUser)
+
+    else:
+        form = signUpForm()
+    return render(request,"signup.html",{'form':form})
+
+def signinView(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(data = request.POST)
+        if form.is_valid():
+            username = request.POST['username']
+            password = request.POST['password']
+            user = authenticate(username=username,password=password)
+            if user is not None:
+                login(request,user)
+                return redirect('home')
+            else:
+                return redirect('signUp')
+    else:
+        form =AuthenticationForm()
+    return render(request,'signin.html',{'form':form})
+
+def signOutView(request):
+    logout(request)
+    return redirect('signIn')
