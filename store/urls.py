@@ -12,6 +12,11 @@ urlpatterns = [
     path('product/<slug:category_slug>/<slug:product_slug>', views.productPage, name='productDetails'),
     path('cart/add/<int:product_id>',views.addCart,name='addCart'),
     path('cartdetail/',views.cartdetail,name="cartdetail"),
+    path('cart/remove/<int:product_id>',views.removeCart,name="removeCart"),
+    path('account/create',views.signupView,name="signUp"),
+    path('account/login',views.signinView,name="signIn"),
+    path('account/logout',views.signOutView,name="signOut"),
+
 ]
 # product/fashion/
 # product/toys/lego

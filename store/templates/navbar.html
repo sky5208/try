@@ -21,8 +21,9 @@
             </ul>
             <ul class="navbar-nav">
                 <li class="nav-item dropdown">
+                {% if request.user.is_authenticated and request.user.first_name %}
                     <button class="btn btn-dark dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                        Welcome, Demo <i class="fas fa-user circle"></i>
+                        Welcome, {{request.user.first_name}} <i class="fas fa-user circle"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-dark">
                         <li><a class="dropdown-item" href="">ประวัติการสั่งซื้อ</a></li>
@@ -31,20 +32,22 @@
             </ul>
             <ul class="navbar-nav">
                 <li class="nav-item">
-                    <a class="nav-link text-light text-uppercase font-weight-bold px-3" href="">
+                    <a class="nav-link text-light text-uppercase font-weight-bold px-3" href="{%url 'signOut'%}">
                         Sign Out <i class="fas fa-sign-out-alt"></i>
                     </a>
                 </li>
+                {% else %}
                 <li class="nav-item">
-                    <a class="nav-link text-light text-uppercase font-weight-bold px-3" href="">
+                    <a class="nav-link text-light text-uppercase font-weight-bold px-3" href="{% url 'signUp' %}">
                         Sign Up <i class="fas fa-user-plus"></i>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link text-light text-uppercase font-weight-bold px-3" href="">
+                    <a class="nav-link text-light text-uppercase font-weight-bold px-3" href="{% url 'signIn' %}">
                         Sign In <i class="fas fa-sign-in-alt"></i>
                     </a>
                 </li>
+                {% endif %}
                 <li class="nav-item">
                     <a class="nav-link text-light text-uppercase font-weight-bold px-3" href="{% url 'cartdetail' %}">
                         <i class="fas fa-shopping-cart"></i>
