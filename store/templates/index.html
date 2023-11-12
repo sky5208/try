@@ -13,20 +13,35 @@
                         <a href="{{product.get_url}}">{{product.name}}</a>
                     </h4>
                     <h5>${{product.price|intcomma}}</h5>
-                    <p class="card-text">{{product.description}}
+                    <p class="card-text">{{product.description | slice:":70"}}
                     </p>
                 </div>
                 <div class="card-footer">
-                    <h3><small class="text-muted">&#9733; &#9733; &#9733; &#9733; &#9734;</small></h3>
-                    {% if product.stock <= 0 %}
+                    <p class="card-text">In stock : {{product.stock}}</p>
+                    
+                    <!-- <h3><small class="text-muted">&#9733; &#9733; &#9733; &#9733; &#9734;</small></h3> -->
+                    {% if product.stock == 0 %}
                         <h2><p class ="text-danger">สินค้าหมด</p></h2>
                     {% else %}
-                        <a href="{%url 'addCart' product.id %}" class="btn btn-primary">เพิ่มสินค้าลงตะกร้า</a>
+                        <a href="{%url 'addCart' product.id %}" class="btn btn-primary" >เพิ่มสินค้าลงตะกร้า</a>
                     {% endif %}
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
+    <nav aria-label="pagination">
+        {% if products.paginator.num_pages > 1 %}
+        <ul class="pagination">
+            {% for page_number in products.paginator.page_range %}
+            <li class="page-item
+            {% if products.number == page_number %}
+                active
+            {% endif %}
+            "><a class="page-link" href="?page={{page_number}}">{{page_number}}</a></li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+      </nav>
 </div>
 {% endblock %}

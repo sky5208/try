@@ -1,6 +1,7 @@
 {% extends 'layout.html'%}
 {% load humanize %}
 {% block content%}
+
 <div class="container">
     <div class="row"></div>
     <div class="col-lg-2"></div>
@@ -11,14 +12,16 @@
               <h3 class="card-title">{{product.name}}</h3>
               <h4>${{product.price|intcomma}}</h4>
               <p class="card-text">{{product.description}}</p>
-              <span class="text-warning">&#9733; &#9733; &#9733; &#9733; &#9734;</span>
-              4.0 stars
+              <p class="card-text">{{product.stock}}</p>
+              <!-- <span class="text-warning">&#9733; &#9733; &#9733; &#9733; &#9734;</span>
+              4.0 stars -->
               <div class="card-footer">
                 <h3><small class="text-muted">&#9733; &#9733; &#9733; &#9733; &#9734;</small></h3>
                 {% if product.stock <= 0 %}
                     <h2><p class ="text-danger">สินค้าหมด</p></h2>
                 {% else %}
-                    <a href="{%url 'addCart' product.id %}" class="btn btn-primary">เพิ่มสินค้าในตะกร้า</a>
+                    <a href="{%url 'addCart' product.id %}" class="btn btn-primary" id="addToCartButton">เพิ่มสินค้าในตะกร้า</a>
+                    <h2><p class ="text-danger">สินค้าหมด</p></h2>
                 {% endif %}
             </div>
             </div>

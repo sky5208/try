@@ -16,6 +16,7 @@ urlpatterns = [
     path('account/create',views.signupView,name="signUp"),
     path('account/login',views.signinView,name="signIn"),
     path('account/logout',views.signOutView,name="signOut"),
+    path('search/',views.search,name="search"),
 
 ]
 # product/fashion/
