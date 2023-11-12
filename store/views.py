@@ -76,7 +76,11 @@ def addCart(request, product_id):
             quantity=1
         )
     
+<<<<<<< HEAD
     return redirect('home')
+=======
+    return redirect('cartdetail')
+>>>>>>> 770af0f7fa5c691160e47278de3fd68ff83883ee
 
 
 
@@ -221,4 +225,8 @@ def viewOrder(request,order_id):
     return render(request,'viewOrder.html',{'order':order,'order_item':orderitem})    
 
 def thankyou(request):
+<<<<<<< HEAD
     return render(request,'thankyou.html')
+=======
+    return render(request,'thankyou.html')
+>>>>>>> 770af0f7fa5c691160e47278de3fd68ff83883ee
