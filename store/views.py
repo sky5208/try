@@ -5,6 +5,11 @@ from store.forms import signUpForm
 from django.contrib.auth.models import Group,User
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login,authenticate,logout
+from django.core.paginator import Paginator,EmptyPage,InvalidPage
+from django.contrib.auth.decorators import login_required
+from django.conf import settings
+import stripe
+
 
 # Create your views here.
 def index(request,category_slug=None):
@@ -16,7 +21,18 @@ def index(request,category_slug=None):
         products = Product.objects.all().filter(category=category_page,available=True)
     else:
         products = Product.objects.all().filter(available=True)  # Access the "objects" attribute on the "Product" model
-    return render(request, 'index.html', {'products': products,'category':category_page})
+    paginator = Paginator(products,3)
+    try:
+        page = int(request.GET.get('page','1'))
+    except:
+        page = 1
+
+    try:
+        productperPage = paginator.page(page)
+    except (EmptyPage,InvalidPage):
+        productperPage = paginator.page(paginator.num_pages)
+    
+    return render(request, 'index.html', {'products': productperPage,'category':category_page})
 
 
 
@@ -33,32 +49,35 @@ def _cart_id(request):
         request.session.create()
     return cart
 
-def addCart(request,product_id):
+
+
+@login_required(login_url='signIn')
+def addCart(request, product_id):
     # รหัสสินค้า 1
     # ดึงสินค้าตามรหัสสินค้า
     product = Product.objects.get(id=product_id)
-    # สร้างตระกร้าสินค้า
-    try:
-        cart = Cart.objects.get(cart_id =_cart_id(request))
-    except Cart.DoesNotExist:
-        cart = Cart.objects.create(cart_id = _cart_id(request))
-        cart.save()
+    
+    # สร้างตระกร้าสินค้า (using get_or_create)
+    cart, created = Cart.objects.get_or_create(cart_id=_cart_id(request))
 
     try:
-    # ซื้อรายการสินค้าซ้ำ
-        cart_item = CartItem.objects.get(product=product,cart=cart)
-        if cart_item.quantity<cart_item.product.stock:
-            cart_item.quantity+=1
+        # ซื้อรายการสินค้าซ้ำ
+        cart_item = CartItem.objects.get(product=product, cart=cart)
+        
+        # Check if adding one more item exceeds the available stock
+        if cart_item.quantity < cart_item.product.stock:
+            cart_item.quantity += 1
             cart_item.save()
     except CartItem.DoesNotExist:
-    # ซื้อครั้งแรก
+        # ซื้อครั้งแรก
         cart_item = CartItem.objects.create(
             product=product,
             cart=cart,
-            quantity = 1
-            )
-        cart_item.save()
+            quantity=1
+        )
+    
     return redirect('/')
+
 
 def cartdetail(request):
     total = 0
@@ -72,7 +91,31 @@ def cartdetail(request):
             counter += item.quantity
     except Exception as e:
         pass
-    return render(request,'cartdetail.html',dict(cart_items = cart_items,total = total,counter = counter))
+    stripe.api_key = settings.SECRET_KEY
+    stripe_total = int(total*100)
+    description ='Payment Online'
+    data_key = settings.PUBLIC_KEY
+    if request.method == 'POST':
+        try:
+            token = request.POST['stripeToken']
+            email = request.POST['stripeEmail']
+            customer = stripe.Customer.create(
+                email=email,
+                source=token
+            )
+            charge = stripe.Charge.create(
+                amount = stripe_total,
+                currency='thb',
+                description=description,
+                customer=customer.id
+            )
+        except stripe.error.cardError as e:
+            return False , e
+
+    return render(request,'cartdetail.html',
+                  dict(cart_items = cart_items,total = total,counter = counter,
+                       data_key=data_key,stripe_total=stripe_total,
+                       description=description))
 
 def removeCart(request,product_id):
     cart = Cart.objects.get(cart_id = _cart_id(request))
@@ -119,3 +162,7 @@ def signinView(request):
 def signOutView(request):
     logout(request)
     return redirect('signIn')
+
+def search(request):
+    products = Product.objects.filter(name__contains = request.GET['title'])
+    return render(request,'index.html',{'products':products})

@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "django.contrib.humanize",
     "crispy_forms",
     "crispy_bootstrap4",
+    "stripe",
 
 ]
 
@@ -139,3 +140,5 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+PUBLIC_KEY = 'pk_test_51OBHgGGnR5HWUQPmPBWfzJb4j5vGAeXXoTH1SRV9sPpmGNxob6XrMzLPaouTqMwqh81vn5loYFPlkNHzJk44bKi500FfJuSOAs'
+SECRET_KEY = 'sk_test_51OBHgGGnR5HWUQPmdsUdidEkPzUjZyIdJWhEbIrvVRkSLDu88TrKtdL8lAhhHggvzzoxzVW6scrknequyZU6pbeC00hpEQ1erj'
