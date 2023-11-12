@@ -1,6 +1,6 @@
 from django.shortcuts import render,get_object_or_404,redirect
 from django.http import HttpResponse
-from store.models import Category,Product,Cart,CartItem
+from store.models import Category,Product,Cart,CartItem,Order,OrderItem
 from store.forms import signUpForm
 from django.contrib.auth.models import Group,User
 from django.contrib.auth.forms import AuthenticationForm
@@ -76,7 +76,8 @@ def addCart(request, product_id):
             quantity=1
         )
     
-    return redirect('/')
+    return redirect('home')
+
 
 
 def cartdetail(request):
@@ -84,37 +85,76 @@ def cartdetail(request):
     counter = 0
     cart_items = None
     try:
-        cart = Cart.objects.get(cart_id =_cart_id(request))
-        cart_items = CartItem.objects.filter(cart=cart,active=True)
+        cart = Cart.objects.get(cart_id=_cart_id(request))
+        cart_items = CartItem.objects.filter(cart=cart, active=True)
         for item in cart_items:
-            total += (item.product.price*item.quantity)
+            total += (item.product.price * item.quantity)
             counter += item.quantity
-    except Exception as e:
-        pass
+    except Cart.DoesNotExist:
+        pass  # Handle the case where the cart does not exist
+
     stripe.api_key = settings.SECRET_KEY
-    stripe_total = int(total*100)
-    description ='Payment Online'
+    stripe_total = int(total * 100)
+    description = 'Payment Online'
     data_key = settings.PUBLIC_KEY
+
     if request.method == 'POST':
         try:
             token = request.POST['stripeToken']
             email = request.POST['stripeEmail']
+            name = request.POST['stripeBillingName']
+            address = request.POST['stripeBillingAddressLine1']
+            city = request.POST['stripeBillingAddressCity']
+            postcode = request.POST['stripeBillingAddressZip']
+
             customer = stripe.Customer.create(
                 email=email,
                 source=token
             )
             charge = stripe.Charge.create(
-                amount = stripe_total,
+                amount=stripe_total,
                 currency='thb',
                 description=description,
                 customer=customer.id
             )
-        except stripe.error.cardError as e:
-            return False , e
 
-    return render(request,'cartdetail.html',
-                  dict(cart_items = cart_items,total = total,counter = counter,
-                       data_key=data_key,stripe_total=stripe_total,
+            # Save order information
+            order = Order.objects.create(
+                name=name,
+                address=address,
+                city=city,
+                postcode=postcode,
+                total=total,
+                email=email,
+                token = token
+            )
+            order.save()
+
+            # Save order items
+            for item in cart_items:
+                order_item = OrderItem.objects.create(
+                    product=item.product.name,
+                    quantity=item.quantity,
+                    price=item.product.price,
+                    order=order
+                )
+                order_item.save()
+
+                # Reduce product stock
+                product = Product.objects.get(id=item.product.id)
+                product.stock = int(product.stock - order_item.quantity)
+                product.save()
+
+                item.delete()
+
+            return redirect('thankyou')
+
+        except stripe.error.CardError as e:
+            return False, e
+
+    return render(request, 'cartdetail.html',
+                  dict(cart_items=cart_items, total=total, counter=counter,
+                       data_key=data_key, stripe_total=stripe_total,
                        description=description))
 
 def removeCart(request,product_id):
@@ -166,3 +206,19 @@ def signOutView(request):
 def search(request):
     products = Product.objects.filter(name__contains = request.GET['title'])
     return render(request,'index.html',{'products':products})
+
+def orderHistory(request):
+    if request.user.is_authenticated:
+        email = str(request.user.email)
+        orders = Order.objects.filter(email=email)
+    return render(request,'order.html',{'orders':orders})
+ 
+def viewOrder(request,order_id):
+    if request.user.is_authenticated:
+        email = str(request.user.email)
+        order = Order.objects.get(email=email,id=order_id)
+        orderitem = OrderItem.objects.filter(order=order)
+    return render(request,'viewOrder.html',{'order':order,'order_item':orderitem})    
+
+def thankyou(request):
+    return render(request,'thankyou.html')
